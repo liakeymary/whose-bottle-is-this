@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Whose bottle is this? 🎮</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #2c3e50;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: white;
+            overflow: hidden;
+        }
+        h1 { margin: 5px 0; font-size: 28px; text-shadow: 2px 2px #000; }
+        #scoreBoard {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 10px;
+            background: rgba(0,0,0,0.5);
+            padding: 8px 20px;
+            border-radius: 20px;
+        }
+        /* 게임 화면 컨테이너 */
+        #gameContainer {
+            position: relative;
+            border: 4px solid #fff;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+        canvas { background-color: #7f8c8d; display: block; }
+        
+        /* 하단 안내 가이드 */
+        .instructions {
+            margin-top: 15px;
+            font-size: 14px;
+            color: #bdc3c7;
+            text-align: center;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Whose bottle is this? 🔑</h1>
+    <div id="scoreBoard">💰 Score: <span id="score">0</span> | 🎒 Inventory: <span id="inv">None</span></div>
+
+    <div id="gameContainer">
+        <canvas id="gameCanvas" width="800" height="500"></canvas>
+    </div>
+
+    <div class="instructions">
+        <b>[조작 방법]</b> 키보드 화살표 ◀ ▲ ▶ ▼ 또는 W, A, S, D | 마우스 클릭/화면 터치 시 그 방향으로 이동합니다.<br>
+        바닥의 ❓ 물건을 주워 알맞은 NPC에게 가져다주세요! 상인(Merchant)에게서 아이템을 사면 능력이 올라갑니다!
+    </div>
+
+<script>
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+
+    // 게임 상태 변수
+    let score = 0;
+    let inventory = null;
+    let moveSpeed = 4;
+    let hasNet = false; // 잠자리채 보유 여부
+
+    // 플레이어 캐릭터 설정
+    const player = { x: 400, y: 250, size: 20, color: '#e74c3c' };
+
+    // NPC 데이터 (6명)
+    const npcs = [
+        { name: "Minho", x: 100, y: 100, color: '#3498db', wants: ["Soccer ball", "Sneakers"], text: "Minho: Is that my soccer ball?" },
+        { name: "Suji", x: 700, y: 100, color: '#e84393', wants: ["Sketchbook", "Pencil case"], text: "Suji: Oh! That sketchbook is mine!" },
+        { name: "Mr. Kim", x: 100, y: 400, color: '#f1c40f', wants: ["Glasses", "Notebook"], text: "Mr.Kim: Thank you! Those glasses are mine." },
+        { name: "Nancy", x: 700, y: 400, color: '#9b59b6', wants: ["Bottle", "Umbrella"], text: "Nancy: Wow, whose bottle is this? It's mine!" },
+        { name: "Band", x: 400, y: 80, color: '#1abc9c', wants: ["Guitar", "Headphones"], text: "Band: Yeah! That guitar belongs to us." },
+        { name: "Merchant", x: 400, y: 420, color: '#d35400', wants: [], text: "Merchant: 의 빠른 신발(Score 30) / 잠자리채(Score 50) 교환 가능!" }
+    ];
+
+    // 필드에 떨어질 물건 전체 리스트
+    const itemsPool = [
+        { name: "Soccer ball", icon: "⚽" }, { name: "Sneakers", icon: "👟" },
+        { name: "Sketchbook", icon: "🎨" }, { name: "Pencil case", icon: "✏️" },
+        { name: "Glasses", icon: "👓" }, { name: "Notebook", icon: "📒" },
+        { name: "Bottle", icon: "🧪" }, { name: "Umbrella", icon: "🌂" },
+        { name: "Guitar", icon: "🎸" }, { name: "Headphones", icon: "🎧" }
+    ];
+
+    // 현재 필드에 배치된 물건들
+    let activeItems = [];
+
+    // 필드에 무작위로 물건 생성하는 함수
+    function spawnItem() {
+        if (activeItems.length >= 4) return; // 필드에는 최대 4개만 동시에 존재
+        const randomItem = itemsPool[Math.floor(Math.random() * itemsPool.length)];
+        
+        // 이미 필드에 있거나 인벤토리에 있는 물건은 제외
+        if (activeItems.some(i => i.name === randomItem.name) || (inventory && inventory.name === randomItem.name)) return;
+
+        activeItems.push({
+            name: randomItem.name,
+            icon: randomItem.icon,
+            x: Math.random() * (canvas.width - 60) + 30,
+            y: Math.random() * (canvas.height - 120) + 100,
+            size: 15
+        });
+    }
+
+    // 키보드 입력 처리
+    const keys = {};
+    window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
+    window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
+
+    // 마우스/터치 목적지 좌표
+    let targetX = null;
+    let targetY = null;
+
+    canvas.addEventListener('mousedown', e => {
+        const rect = canvas.getBoundingClientRect();
+        targetX = e.clientX - rect.left;
+        targetY = e.clientY - rect.top;
+    });
+
+    canvas.addEventListener('touchstart', e => {
+        const rect = canvas.getBoundingClientRect();
+        targetX = e.touches[0].clientX - rect.left;
+        targetY = e.touches[0].clientY - rect.top;
+        e.preventDefault();
+    });
+
+    // 충돌 체크 함수 (AABB 방식)
+    function checkCollision(obj1, obj2) {
+        let dist = Math.hypot(obj1.x - obj2.x, obj1.y - obj2.y);
+        return dist < (obj1.size || obj1.width/2) + (obj2.size || 15);
+    }
+
+    // 게임 로직 업데이트
+    function update() {
+        // 1. 키보드 이동
+        if (keys['arrowup'] || keys['w']) { player.y -= moveSpeed; targetX = null; }
+        if (keys['arrowdown'] || keys['s']) { player.y += moveSpeed; targetX = null; }
+        if (keys['arrowleft'] || keys['a']) { player.x -= moveSpeed; targetX = null; }
+        if (keys['arrowright'] || keys['d']) { player.x += moveSpeed; targetX = null; }
+
+        // 2. 마우스/터치 이동
+        if (targetX !== null && targetY !== null) {
+            let dx = targetX - player.x;
+            let dy = targetY - player.y;
+            let dist = Math.hypot(dx, dy);
+
+            if (dist > 5) {
+                player.x += (dx / dist) * moveSpeed;
+                player.y += (dy / dist) * moveSpeed;
+            } else {
+                targetX = null;
+                targetY = null;
+            }
+        }
+
+        // 화면 밖으로 못 나가게 제한
+        player.x = Math.max(player.size, Math.min(canvas.width - player.size, player.x));
+        player.y = Math.max(player.size, Math.min(canvas.height - player.size, player.y));
+
+        // 3. 물건 획득 체크
+        activeItems.forEach((item, index) => {
+            if (checkCollision(player, item)) {
+                if (!inventory) { // 인벤토리가 비어있을 때만 주움
+                    inventory = item;
+                    activeItems.splice(index, 1);
+                    document.getElementById('inv').innerText = item.icon + " " + item.name;
+                }
+            }
+        });
+
+        // 4. NPC 접촉 체크
+        npcs.forEach(npc => {
+            if (checkCollision(player, npc)) {
+                // 상인 NPC 상점 기능
+                if (npc.name === "Merchant") {
+                    if (score >= 30 && moveSpeed === 4) {
+                        score -= 30;
+                        moveSpeed = 7; // 신발 구매 시 속도 업!
+                        alert("👟 빠른 신발을 구매했습니다! 이동 속도가 빨라집니다.");
+                    } else if (score >= 50 && !hasNet) {
+                        score -= 50;
+                        hasNet = true; // 잠자리채 구매!
+                        alert("🧹 잠자리채를 구매했습니다! 높은 곳의 물건도 획득 가능합니다.");
+                    }
+                } 
+                // 일반 배달 NPC 기능
+                else if (inventory && npc.wants.includes(inventory.name)) {
+                    score += 20; // 정답 배달 시 20점 획득
+                    alert(npc.text + " (+20점)");
+                    inventory = null;
+                    document.getElementById('inv').innerText = "None";
+                }
+                
+                // NPC와 닿으면 튕겨나가게 처리 (대화 후 물리적 거리 두기)
+                player.x += (player.x > npc.x ? 10 : -10);
+                player.y += (player.y > npc.y ? 10 : -10);
+                targetX = null; targetY = null;
+            }
+        });
+
+        document.getElementById('score').innerText = score;
+    }
+
+    // 화면 그리기 (렌더링)
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // 배경 그리드 패턴 (교실 바닥 느낌)
+        ctx.strokeStyle = '#95a5a6';
+        ctx.lineWidth = 1;
+        for(let i=0; i<canvas.width; i+=40) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke(); }
+        for(let j=0; j<canvas.height; j+=40) { ctx.beginPath(); ctx.moveTo(0,j); ctx.lineTo(canvas.width,j); ctx.stroke(); }
+
+        // 1. NPC 그리기
+        npcs.forEach(npc => {
+            ctx.beginPath();
+            ctx.arc(npc.x, npc.y, 25, 0, Math.PI * 2);
+            ctx.fillStyle = npc.color;
+            ctx.fill();
+            ctx.closePath();
+
+            // NPC 이름 달아주기
+            ctx.fillStyle = "white";
+            ctx.font = "bold 14px Arial";
+            ctx.textAlign = "center";
+            ctx.fillText(npc.name, npc.x, npc.y - 32);
+        });
+
+        // 2. 필드 위의 물건들 그리기
+        activeItems.forEach(item => {
+            ctx.font = "24px Arial";
+            ctx.textAlign = "center";
+            ctx.textBaseline = "middle";
+            ctx.fillText(item.icon, item.x, item.y);
+        });
+
+        // 3. 플레이어 캐릭터 그리기
+        ctx.beginPath();
+        ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
+        ctx.fillStyle = player.color;
+        ctx.fill();
+        ctx.strokeStyle = "#fff";
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.closePath();
+    }
+
+    // 게임 루프
+    function gameLoop() {
+        update();
+        draw();
+        requestAnimationFrame(gameLoop);
+    }
+
+    // 주기적으로 물건 스폰 (2초마다)
+    setInterval(spawnItem, 2000);
+
+    // 게임 시작
+    gameLoop();
+</script>
+
+</body>
+</html>
