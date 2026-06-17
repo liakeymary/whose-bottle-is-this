@@ -3,268 +3,359 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Whose bottle is this? 🎮</title>
+    <title>Whose bottle is this? 🕵️‍♂️</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #2c3e50;
+            background-color: #34495e;
             margin: 0;
             padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            color: white;
-            overflow: hidden;
+            color: #333;
         }
-        h1 { margin: 5px 0; font-size: 28px; text-shadow: 2px 2px #000; }
-        #scoreBoard {
-            font-size: 20px;
+        h1 { color: #f1c40f; margin-bottom: 10px; text-shadow: 2px 2px #000; font-size: 28px; text-align: center; }
+        
+        /* 엉덩이 탐정 테마 스타일 */
+        .game-container {
+            background-color: #fff9e6; /* 따뜻한 노란색 톤 */
+            width: 100%;
+            max-width: 800px;
+            border-radius: 20px;
+            border: 5px solid #f39c12;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 상단 상태바 */
+        .status-bar {
+            background-color: #f39c12;
+            color: white;
+            padding: 15px 25px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 18px;
+            font-weight: bold;
+        }
+        .merchant-btn {
+            background-color: #d35400;
+            color: white;
+            border: none;
+            padding: 5px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+        }
+        .merchant-btn:hover { background-color: #c0392b; }
+
+        /* NPC 무대 공간 */
+        .stage {
+            height: 250px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(to bottom, #f1c40f, #e67e22);
+            position: relative;
+            padding: 20px;
+        }
+        .npc-avatar {
+            font-size: 80px;
+            margin-bottom: 5px;
+            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2));
+        }
+        .npc-name {
+            background-color: #2c3e50;
+            color: #f1c40f;
+            padding: 5px 20px;
+            border-radius: 15px;
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* 대사창 */
+        .dialogue-box {
+            background-color: white;
+            border: 3px solid #f39c12;
+            margin: 15px;
+            padding: 20px;
+            border-radius: 10px;
+            min-height: 100px;
+            font-size: 18px;
+            font-weight: bold;
+            line-height: 1.6;
+            color: #2c3e50;
+        }
+
+        /* 탐정 카드 리스트 (선택지) */
+        .clue-section {
+            padding: 0 15px 15px 15px;
+        }
+        .clue-title {
+            font-size: 16px;
             font-weight: bold;
             margin-bottom: 10px;
-            background: rgba(0,0,0,0.5);
-            padding: 8px 20px;
-            border-radius: 20px;
+            color: #7f8c8d;
         }
-        /* 게임 화면 컨테이너 */
-        #gameContainer {
-            position: relative;
-            border: 4px solid #fff;
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+        @media (max-width: 600px) { .grid-container { grid-template-columns: repeat(2, 1fr); } }
+
+        .clue-card {
+            background-color: white;
+            border: 2px solid #f1c40f;
             border-radius: 10px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
-        canvas { background-color: #7f8c8d; display: block; }
-        
-        /* 하단 안내 가이드 */
-        .instructions {
-            margin-top: 15px;
-            font-size: 14px;
-            color: #bdc3c7;
+            padding: 12px;
             text-align: center;
-            line-height: 1.5;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 5px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        }
+        .clue-card:hover {
+            border-color: #d35400;
+            background-color: #fff3cd;
+            transform: translateY(-2px);
+        }
+        .clue-card .icon { font-size: 32px; }
+        .clue-card .text { font-size: 14px; font-weight: bold; color: #2c3e50; }
+
+        /* 팝업 레이어 */
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+        }
+        .popup {
+            background-color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            max-width: 400px;
+            width: 80%;
+            border: 4px solid #f39c12;
+        }
+        .popup h2 { margin-top: 0; color: #d35400; }
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px;
+            border-bottom: 1px solid #eee;
+            font-weight: bold;
+        }
+        .buy-btn {
+            background-color: #2ecc71;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+        .buy-btn.owned { background-color: #95a5a6; cursor: default; }
+        .close-btn {
+            margin-top: 20px;
+            background-color: #7f8c8d;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 5px;
+            cursor: pointer;
         }
     </style>
 </head>
 <body>
 
-    <h1>Whose bottle is this? 🔑</h1>
-    <div id="scoreBoard">💰 Score: <span id="score">0</span> | 🎒 Inventory: <span id="inv">None</span></div>
+    <h1>Whose bottle is this? 🕵️‍♂️<br><span style="font-size: 18px; color: white;">[엉덩이 탐정과 조수 브라운]</span></h1>
+    
+    <div class="game-container">
+        <div class="status-bar">
+            <div>🐶 Assistant Brown's Coins: <span id="scoreText">0</span></div>
+            <div>💼 Solved: <span id="itemsLeft">0</span>/6</div>
+            <button class="merchant-btn" onclick="openShop()">🏪 견공 경찰서 매점</button>
+        </div>
 
-    <div id="gameContainer">
-        <canvas id="gameCanvas" width="800" height="500"></canvas>
+        <div class="stage">
+            <div class="npc-avatar" id="npcAvatar">🕵️‍♂️</div>
+            <div class="npc-name" id="npcName">엉덩이 탐정</div>
+        </div>
+
+        <div class="dialogue-box" id="dialogueText">
+            대사 로딩 중...
+        </div>
+
+        <div class="clue-section">
+            <div class="clue-title">🔎 브라운! 엉덩이 탐정님의 지시에 따라 올바른 분실물 카드를 선택해라 멍!</div>
+            <div class="grid-container" id="clueGrid">
+                </div>
+        </div>
     </div>
 
-    <div class="instructions">
-        <b>[조작 방법]</b> 키보드 화살표 ◀ ▲ ▶ ▼ 또는 W, A, S, D | 마우스 클릭/화면 터치 시 그 방향으로 이동합니다.<br>
-        바닥의 ❓ 물건을 주워 알맞은 NPC에게 가져다주세요! 상인(Merchant)에게서 아이템을 사면 능력이 올라갑니다!
+    <div class="overlay" id="shopOverlay">
+        <div class="popup">
+            <h2>🏪 견공 경찰서 매점</h2>
+            <p>코인을 사용하여 수사에 도움이 되는 물건을 사보자 멍!</p>
+            <div class="shop-item">
+                <span>🔎 탐정 돋보기 (20 Coins)</span>
+                <button class="buy-btn" id="btnGlass" onclick="buyItem('glass', 20)">구매</button>
+            </div>
+            <div class="shop-item">
+                <span>🍠 달콤한 고구마 (40 Coins)</span>
+                <button class="buy-btn" id="btnNotebook" onclick="buyItem('notebook', 40)">구매</button>
+            </div>
+            <button class="close-btn" onclick="closeShop()">닫기</button>
+        </div>
     </div>
 
 <script>
-    const canvas = document.getElementById('gameCanvas');
-    const ctx = canvas.getContext('2d');
-
-    // 게임 상태 변수
     let score = 0;
-    let inventory = null;
-    let moveSpeed = 4;
-    let hasNet = false; // 잠자리채 보유 여부
+    let currentNpcIndex = 0;
+    let solvedCount = 0;
+    let inventory = { glass: false, notebook: false };
 
-    // 플레이어 캐릭터 설정
-    const player = { x: 400, y: 250, size: 20, color: '#e74c3c' };
-
-    // NPC 데이터 (6명)
-    const npcs = [
-        { name: "Minho", x: 100, y: 100, color: '#3498db', wants: ["Soccer ball", "Sneakers"], text: "Minho: Is that my soccer ball?" },
-        { name: "Suji", x: 700, y: 100, color: '#e84393', wants: ["Sketchbook", "Pencil case"], text: "Suji: Oh! That sketchbook is mine!" },
-        { name: "Mr. Kim", x: 100, y: 400, color: '#f1c40f', wants: ["Glasses", "Notebook"], text: "Mr.Kim: Thank you! Those glasses are mine." },
-        { name: "Nancy", x: 700, y: 400, color: '#9b59b6', wants: ["Bottle", "Umbrella"], text: "Nancy: Wow, whose bottle is this? It's mine!" },
-        { name: "Band", x: 400, y: 80, color: '#1abc9c', wants: ["Guitar", "Headphones"], text: "Band: Yeah! That guitar belongs to us." },
-        { name: "Merchant", x: 400, y: 420, color: '#d35400', wants: [], text: "Merchant: 의 빠른 신발(Score 30) / 잠자리채(Score 50) 교환 가능!" }
+    // 엉덩이 탐정 테마에 맞춘 대사 및 문제 데이터
+    const npcData = [
+        { 
+            name: "엉덩이 탐정 & 민호(👦)", 
+            avatar: "👦", 
+            dialogue: "🕵️‍♂️ <b>엉덩이 탐정:</b> \"흠, 첫 번째 의뢰인이군요. 축구 시합이 끝난 뒤 물건을 잃어버렸다고 합니다. 브라운, 의뢰인의 대사를 잘 듣고 물건을 찾아주겠나?\"<br><br>👦 <b>Minho:</b> \"I lost my favorite sports equipment after the match. <b>Whose soccer ball is this? Is it mine?</b>\"", 
+            correct: "Soccer ball" 
+        },
+        { 
+            name: "엉덩이 탐정 & 수지(👧)", 
+            avatar: "👧", 
+            dialogue: "🕵️‍♂️ <b>엉덩이 탐정:</b> \"이번엔 미술실에서 의뢰가 들어왔습니다. 범인이 의뢰인의 미술 도구를 숨겨놓은 모양이군요.\"<br><br>👧 <b>Suji:</b> \"I was drawing a beautiful landscape in art class, but my tools disappeared! <b>Whose sketchbook is this? It's hers... Oh wait, it's mine!</b>\"", 
+            correct: "Sketchbook" 
+        },
+        { 
+            name: "엉덩이 탐정 & 김 선생님(👨‍🏫)", 
+            avatar: "👨‍🏫", 
+            dialogue: "🕵️‍♂️ <b>엉덩이 탐정:</b> \"이런, 선생님께서 교과서를 읽지 못해 곤란해하고 계십니다. 냄새가 나는군요... 사건의 냄새가!\"<br><br>👨‍🏫 <b>Mr. Kim:</b> \"Hello, Brown. I can't read the textbook without my glasses, and I also misplaced my lesson plan book. <b>Whose notebook is this? Can you help me find his notebook?</b>\"", 
+            correct: "Notebook" 
+        },
+        { 
+            name: "엉덩이 탐정 & 낸시 선생님(👩‍🦰)", 
+            avatar: "👩‍🦰", 
+            dialogue: "🕵️‍♂️ <b>엉덩이 탐정:</b> \"원어민 선생님의 의뢰입니다. 비가 오는데 우산도 없고, 목도 마르시다고 하네요. 얼른 도와드립시다.\""<br><br>👩‍🦰 <b>Nancy:</b> \"Oh, hi Brown! It's raining outside but I can't find my umbrella! And I'm so thirsty but where is my water container? <b>Whose bottle is this? It's hers? No, it's mine!</b>\"", 
+            correct: "Bottle" 
+        },
+        { 
+            name: "엉덩이 탐정 & 동아리 밴드(🧑‍🎤)", 
+            avatar: "🧑‍🎤", 
+            dialogue: "🕵️‍♂️ <b>엉덩이 탐정:</b> \"축제 연습을 해야 하는 밴드부 아이들의 악기가 사라졌다고 합니다. 브라운, 어떤 악기인지 집중해 보세요.\"<br><br>🧑‍🎤 <b>Band:</b> \"Hey Detective! We need to practice for the school festival, but we lost our musical instruments! <b>Whose guitar is this? It's theirs? No, it's ours!</b>\"", 
+            correct: "Guitar" 
+        },
+        { 
+            name: "엉덩이 탐정 & 민호(👦) - 재방문", 
+            avatar: "👦", 
+            dialogue: "🕵️‍♂️ <b>엉덩이 탐정:</b> \"민호 군이 다시 찾아왔군요. 축구공은 찾았지만 아직 맨발로 서 있습니다. 마지막 물건을 전달할 시간입니다.\"<br><br>👦 <b>Minho:</b> \"Ah, you are back, Brown! Thank you for the ball. But I'm still walking barefoot... <b>Whose sneakers are these? Are they his? No, they are mine!</b>\"", 
+            correct: "Sneakers" 
+        }
     ];
 
-    // 필드에 떨어질 물건 전체 리스트
-    const itemsPool = [
-        { name: "Soccer ball", icon: "⚽" }, { name: "Sneakers", icon: "👟" },
-        { name: "Sketchbook", icon: "🎨" }, { name: "Pencil case", icon: "✏️" },
-        { name: "Glasses", icon: "👓" }, { name: "Notebook", icon: "📒" },
-        { name: "Bottle", icon: "🧪" }, { name: "Umbrella", icon: "🌂" },
-        { name: "Guitar", icon: "🎸" }, { name: "Headphones", icon: "🎧" }
+    const clueCards = [
+        { name: "Soccer ball", icon: "⚽" }, { name: "Sketchbook", icon: "🎨" },
+        { name: "Notebook", icon: "📒" }, { name: "Bottle", icon: "🧪" },
+        { name: "Guitar", icon: "🎸" }, { name: "Sneakers", icon: "👟" },
+        { name: "Umbrella", icon: "🌂" }, { name: "Glasses", icon: "👓" }
     ];
 
-    // 현재 필드에 배치된 물건들
-    let activeItems = [];
-
-    // 필드에 무작위로 물건 생성하는 함수
-    function spawnItem() {
-        if (activeItems.length >= 4) return; // 필드에는 최대 4개만 동시에 존재
-        const randomItem = itemsPool[Math.floor(Math.random() * itemsPool.length)];
+    function initGame() {
+        const grid = document.getElementById('clueGrid');
+        grid.innerHTML = '';
         
-        // 이미 필드에 있거나 인벤토리에 있는 물건은 제외
-        if (activeItems.some(i => i.name === randomItem.name) || (inventory && inventory.name === randomItem.name)) return;
-
-        activeItems.push({
-            name: randomItem.name,
-            icon: randomItem.icon,
-            x: Math.random() * (canvas.width - 60) + 30,
-            y: Math.random() * (canvas.height - 120) + 100,
-            size: 15
+        clueCards.forEach(card => {
+            const div = document.createElement('div');
+            div.className = 'clue-card';
+            div.onclick = () => submitAnswer(card.name);
+            div.innerHTML = `
+                <div class="icon">${card.icon}</div>
+                <div class="text">${card.name}</div>
+            `;
+            grid.appendChild(div);
         });
+        updateStage();
     }
 
-    // 키보드 입력 처리
-    const keys = {};
-    window.addEventListener('keydown', e => keys[e.key.toLowerCase()] = true);
-    window.addEventListener('keyup', e => keys[e.key.toLowerCase()] = false);
-
-    // 마우스/터치 목적지 좌표
-    let targetX = null;
-    let targetY = null;
-
-    canvas.addEventListener('mousedown', e => {
-        const rect = canvas.getBoundingClientRect();
-        targetX = e.clientX - rect.left;
-        targetY = e.clientY - rect.top;
-    });
-
-    canvas.addEventListener('touchstart', e => {
-        const rect = canvas.getBoundingClientRect();
-        targetX = e.touches[0].clientX - rect.left;
-        targetY = e.touches[0].clientY - rect.top;
-        e.preventDefault();
-    });
-
-    // 충돌 체크 함수 (AABB 방식)
-    function checkCollision(obj1, obj2) {
-        let dist = Math.hypot(obj1.x - obj2.x, obj1.y - obj2.y);
-        return dist < (obj1.size || obj1.width/2) + (obj2.size || 15);
+    function updateStage() {
+        if (currentNpcIndex < npcData.length) {
+            const currentNpc = npcData[currentNpcIndex];
+            document.getElementById('npcAvatar').innerText = currentNpc.avatar;
+            document.getElementById('npcName').innerText = currentNpc.name;
+            document.getElementById('dialogueText').innerHTML = currentNpc.dialogue;
+        } else {
+            document.getElementById('npcAvatar').innerText = "🍑";
+            document.getElementById('npcName').innerText = "사건 해결!";
+            document.getElementById('dialogueText').innerHTML = `🕵️‍♂️ <b>엉덩이 탐정:</b> \"실례지만 결과 발표를 하도록 하겠습니다! 브라운, 자네 덕분에 모든 사건을 완벽하게 해결했네. 아주 훌륭한 조수야!\" <br><br>🐶 <b>브라운:</b> \"헤헤, 탐정님 덕분이다 멍!\"<br><br>🏆 <b>최종 획득 코인: ${score} Coins</b>`;
+        }
+        document.getElementById('scoreText').innerText = score;
+        document.getElementById('itemsLeft').innerText = solvedCount;
     }
 
-    // 게임 로직 업데이트
-    function update() {
-        // 1. 키보드 이동
-        if (keys['arrowup'] || keys['w']) { player.y -= moveSpeed; targetX = null; }
-        if (keys['arrowdown'] || keys['s']) { player.y += moveSpeed; targetX = null; }
-        if (keys['arrowleft'] || keys['a']) { player.x -= moveSpeed; targetX = null; }
-        if (keys['arrowright'] || keys['d']) { player.x += moveSpeed; targetX = null; }
+    function submitAnswer(selectedItem) {
+        if (currentNpcIndex >= npcData.length) return;
 
-        // 2. 마우스/터치 이동
-        if (targetX !== null && targetY !== null) {
-            let dx = targetX - player.x;
-            let dy = targetY - player.y;
-            let dist = Math.hypot(dx, dy);
+        const currentNpc = npcData[currentNpcIndex];
 
-            if (dist > 5) {
-                player.x += (dx / dist) * moveSpeed;
-                player.y += (dy / dist) * moveSpeed;
+        if (selectedItem === currentNpc.correct) {
+            let bonus = inventory.notebook ? 25 : 20; // 고구마 먹으면 보너스 파워!
+            score += bonus;
+            solvedCount++;
+            alert(`⭕ 정답이다 멍!\n🕵️‍♂️ 엉덩이 탐정: "역시 내 조수 브라운이군요. 멋지게 찾아냈습니다!"`);
+            currentNpcIndex++;
+            updateStage();
+        } else {
+            if (inventory.glass) {
+                alert(`❌ 틀렸다 멍! [돋보기 힌트]: 이 물건의 영어 이름은 '${currentNpc.correct}' 이다 멍!`);
             } else {
-                targetX = null;
-                targetY = null;
+                alert(`❌ 앗, 이 물건이 아닌가 봐 멍... 대사를 다시 잘 읽어보자 멍!`);
             }
         }
+    }
 
-        // 화면 밖으로 못 나가게 제한
-        player.x = Math.max(player.size, Math.min(canvas.width - player.size, player.x));
-        player.y = Math.max(player.size, Math.min(canvas.height - player.size, player.y));
+    function openShop() { document.getElementById('shopOverlay').style.display = 'flex'; }
+    function closeShop() { document.getElementById('shopOverlay').style.display = 'none'; }
 
-        // 3. 물건 획득 체크
-        activeItems.forEach((item, index) => {
-            if (checkCollision(player, item)) {
-                if (!inventory) { // 인벤토리가 비어있을 때만 주움
-                    inventory = item;
-                    activeItems.splice(index, 1);
-                    document.getElementById('inv').innerText = item.icon + " " + item.name;
-                }
+    function buyItem(itemType, cost) {
+        if (inventory[itemType]) return;
+
+        if (score >= cost) {
+            score -= cost;
+            inventory[itemType] = true;
+            
+            const btn = itemType === 'glass' ? document.getElementById('btnGlass') : document.getElementById('btnNotebook');
+            btn.innerText = "보유함";
+            btn.className = "buy-btn owned";
+            btn.disabled = true;
+
+            document.getElementById('scoreText').innerText = score;
+            
+            if (itemType === 'glass') {
+                alert("🔎 탐정 돋보기를 구매했다 멍! 이제 틀려도 탐정님이 정답 힌트를 준다 멍!");
+            } else {
+                alert("🍠 달콤한 고구마를 먹었다 멍! 브라운의 힘이 솟아나 정답을 맞힐 때마다 보너스 코인(+25점)을 받는다 멍!");
             }
-        });
-
-        // 4. NPC 접촉 체크
-        npcs.forEach(npc => {
-            if (checkCollision(player, npc)) {
-                // 상인 NPC 상점 기능
-                if (npc.name === "Merchant") {
-                    if (score >= 30 && moveSpeed === 4) {
-                        score -= 30;
-                        moveSpeed = 7; // 신발 구매 시 속도 업!
-                        alert("👟 빠른 신발을 구매했습니다! 이동 속도가 빨라집니다.");
-                    } else if (score >= 50 && !hasNet) {
-                        score -= 50;
-                        hasNet = true; // 잠자리채 구매!
-                        alert("🧹 잠자리채를 구매했습니다! 높은 곳의 물건도 획득 가능합니다.");
-                    }
-                } 
-                // 일반 배달 NPC 기능
-                else if (inventory && npc.wants.includes(inventory.name)) {
-                    score += 20; // 정답 배달 시 20점 획득
-                    alert(npc.text + " (+20점)");
-                    inventory = null;
-                    document.getElementById('inv').innerText = "None";
-                }
-                
-                // NPC와 닿으면 튕겨나가게 처리 (대화 후 물리적 거리 두기)
-                player.x += (player.x > npc.x ? 10 : -10);
-                player.y += (player.y > npc.y ? 10 : -10);
-                targetX = null; targetY = null;
-            }
-        });
-
-        document.getElementById('score').innerText = score;
+        } else {
+            alert("💰 코인이 부족하다 멍! 의뢰를 더 해결하고 오자 멍!");
+        }
     }
 
-    // 화면 그리기 (렌더링)
-    function draw() {
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-        // 배경 그리드 패턴 (교실 바닥 느낌)
-        ctx.strokeStyle = '#95a5a6';
-        ctx.lineWidth = 1;
-        for(let i=0; i<canvas.width; i+=40) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,canvas.height); ctx.stroke(); }
-        for(let j=0; j<canvas.height; j+=40) { ctx.beginPath(); ctx.moveTo(0,j); ctx.lineTo(canvas.width,j); ctx.stroke(); }
-
-        // 1. NPC 그리기
-        npcs.forEach(npc => {
-            ctx.beginPath();
-            ctx.arc(npc.x, npc.y, 25, 0, Math.PI * 2);
-            ctx.fillStyle = npc.color;
-            ctx.fill();
-            ctx.closePath();
-
-            // NPC 이름 달아주기
-            ctx.fillStyle = "white";
-            ctx.font = "bold 14px Arial";
-            ctx.textAlign = "center";
-            ctx.fillText(npc.name, npc.x, npc.y - 32);
-        });
-
-        // 2. 필드 위의 물건들 그리기
-        activeItems.forEach(item => {
-            ctx.font = "24px Arial";
-            ctx.textAlign = "center";
-            ctx.textBaseline = "middle";
-            ctx.fillText(item.icon, item.x, item.y);
-        });
-
-        // 3. 플레이어 캐릭터 그리기
-        ctx.beginPath();
-        ctx.arc(player.x, player.y, player.size, 0, Math.PI * 2);
-        ctx.fillStyle = player.color;
-        ctx.fill();
-        ctx.strokeStyle = "#fff";
-        ctx.lineWidth = 3;
-        ctx.stroke();
-        ctx.closePath();
-    }
-
-    // 게임 루프
-    function gameLoop() {
-        update();
-        draw();
-        requestAnimationFrame(gameLoop);
-    }
-
-    // 주기적으로 물건 스폰 (2초마다)
-    setInterval(spawnItem, 2000);
-
-    // 게임 시작
-    gameLoop();
+    initGame();
 </script>
 
 </body>
