@@ -3,352 +3,232 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Whose bottle is this? 🕵️‍♂️</title>
+    <title>Describe the Object! 🔎</title>
     <style>
         body {
             font-family: 'Arial', sans-serif;
-            background-color: #34495e;
+            background-color: #2c3e50;
             margin: 0;
             padding: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            color: #333;
+            justify-content: center;
+            min-height: 90vh;
+            color: white;
         }
-        h1 { color: #f1c40f; margin-bottom: 10px; text-shadow: 2px 2px #000; font-size: 28px; text-align: center; }
+        h1 { color: #f1c40f; margin-bottom: 5px; text-shadow: 2px 2px #000; text-align: center; }
+        p { color: #ecf0f1; margin-bottom: 25px; font-size: 16px; text-align: center; }
         
-        .game-container {
-            background-color: #fff9e6;
-            width: 100%;
-            max-width: 800px;
-            border-radius: 20px;
-            border: 5px solid #f39c12;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .status-bar {
-            background-color: #f39c12;
-            color: white;
-            padding: 15px 25px;
-            display: flex;
-            justify-content: space-between;
-            font-size: 18px;
-            font-weight: bold;
-        }
-        .merchant-btn {
-            background-color: #d35400;
-            color: white;
-            border: none;
-            padding: 5px 15px;
-            border-radius: 5px;
+        /* 메인 퀴즈 카드 스타일 */
+        .card-container {
+            width: 90%;
+            max-width: 450px;
+            aspect-ratio: 3 / 4;
+            perspective: 1000px;
             cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
+            margin-bottom: 25px;
         }
-        .merchant-btn:hover { background-color: #c0392b; }
-
-        .stage {
-            height: 250px;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(to bottom, #f1c40f, #e67e22);
+        .card-inner {
             position: relative;
-            padding: 20px;
+            width: 100%;
+            height: 100%;
+            transition: transform 0.6s;
+            transform-style: preserve-3d;
+            border-radius: 20px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.4);
         }
-        .npc-avatar {
-            font-size: 80px;
-            margin-bottom: 5px;
-            filter: drop-shadow(2px 4px 6px rgba(0,0,0,0.2));
+        /* flipped 클래스가 붙으면 뒤집어짐 */
+        .card-container.flipped .card-inner {
+            transform: rotateY(180deg);
         }
-        .npc-name {
-            background-color: #2c3e50;
-            color: #f1c40f;
-            padding: 5px 20px;
-            border-radius: 15px;
-            font-size: 18px;
-            font-weight: bold;
-        }
-
-        .dialogue-box {
-            background-color: white;
-            border: 3px solid #f39c12;
-            margin: 15px;
-            padding: 20px;
-            border-radius: 10px;
-            min-height: 100px;
-            font-size: 18px;
-            font-weight: bold;
-            line-height: 1.6;
-            color: #2c3e50;
-        }
-
-        .clue-section {
-            padding: 0 15px 15px 15px;
-        }
-        .clue-title {
-            font-size: 16px;
-            font-weight: bold;
-            margin-bottom: 10px;
-            color: #7f8c8d;
-        }
-        .grid-container {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 10px;
-        }
-        @media (max-width: 600px) { .grid-container { grid-template-columns: repeat(2, 1fr); } }
-
-        .clue-card {
-            background-color: white;
-            border: 2px solid #f1c40f;
-            border-radius: 10px;
-            padding: 12px;
-            text-align: center;
-            cursor: pointer;
-            transition: all 0.2s;
+        
+        .card-front, .card-back {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            backface-visibility: hidden;
+            border-radius: 20px;
             display: flex;
             flex-direction: column;
             align-items: center;
-            gap: 5px;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.05);
-        }
-        .clue-card:hover {
-            border-color: #d35400;
-            background-color: #fff3cd;
-            transform: translateY(-2px);
-        }
-        .clue-card .icon { font-size: 32px; }
-        .clue-card .text { font-size: 14px; font-weight: bold; color: #2c3e50; }
-
-        .overlay {
-            display: none;
-            position: fixed;
-            top: 0; left: 0; width: 100%; height: 100%;
-            background-color: rgba(0,0,0,0.7);
             justify-content: center;
-            align-items: center;
-            z-index: 10;
-        }
-        .popup {
-            background-color: white;
+            box-sizing: border-box;
             padding: 30px;
-            border-radius: 15px;
+            border: 4px solid #fff;
+        }
+        
+        /* 카드 앞면: 묘사 질문 텍스트 */
+        .card-front {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+        .question-title {
+            font-size: 24px;
+            font-weight: 900;
+            background: rgba(0,0,0,0.2);
+            padding: 5px 20px;
+            border-radius: 20px;
+            margin-bottom: 30px;
+            letter-spacing: 1px;
+        }
+        .description-text {
+            font-size: 22px;
+            font-weight: bold;
+            line-height: 1.8;
             text-align: center;
-            max-width: 400px;
+            word-break: keep-all;
+        }
+        .tap-hint {
+            position: absolute;
+            bottom: 20px;
+            font-size: 14px;
+            color: rgba(255,255,255,0.8);
+            animation: blink 1.5s infinite;
+        }
+        
+        /* 카드 뒷면: 정답 이미지 및 텍스트 */
+        .card-back {
+            background-color: white;
+            color: #333;
+            transform: rotateY(180deg);
+            border-color: #38ef7d;
+        }
+        .card-back img {
             width: 80%;
-            border: 4px solid #f39c12;
+            height: 60%;
+            object-fit: contain;
+            margin-bottom: 15px;
+            border-radius: 10px;
         }
-        .popup h2 { margin-top: 0; color: #d35400; }
-        .shop-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px;
-            border-bottom: 1px solid #eee;
-            font-weight: bold;
+        .answer-text {
+            font-size: 28px;
+            font-weight: 900;
+            color: #2c3e50;
+            border-bottom: 3px solid #38ef7d;
+            padding-bottom: 5px;
         }
-        .buy-btn {
-            background-color: #2ecc71;
-            color: white;
+        
+        /* 다음 카드 버튼 */
+        .next-btn {
+            background-color: #f1c40f;
+            color: #2c3e50;
             border: none;
-            padding: 5px 10px;
-            border-radius: 3px;
-            cursor: pointer;
+            border-radius: 50px;
+            padding: 15px 40px;
+            font-size: 18px;
             font-weight: bold;
-        }
-        .buy-btn.owned { background-color: #95a5a6; cursor: default; }
-        .close-btn {
-            margin-top: 20px;
-            background-color: #7f8c8d;
-            color: white;
-            border: none;
-            padding: 8px 20px;
-            border-radius: 5px;
             cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transition: all 0.2s;
+        }
+        .next-btn:hover { background-color: #f39c12; transform: translateY(-2px); }
+        .next-btn:active { transform: translateY(1px); }
+
+        @keyframes blink {
+            0%, 100% { opacity: 0.5; }
+            50% { opacity: 1; }
         }
     </style>
 </head>
 <body>
 
-    <h1>Whose bottle is this? 🕵️‍♂️<br><span style="font-size: 18px; color: white;">[엉덩이 탐정과 조수 브라운]</span></h1>
+    <h1>Guess the Object! 🤔</h1>
+    <p>영어로 된 설명을 읽고 어떤 물건인지 맞춰보세요. 카드를 누르면 정답이 보입니다멍!</p>
     
-    <div class="game-container">
-        <div class="status-bar">
-            <div>🐶 Assistant Brown's Coins: <span id="scoreText">0</span></div>
-            <div>💼 Solved: <span id="itemsLeft">0</span>/6</div>
-            <button class="merchant-btn" onclick="openShop()">🏪 견공 경찰서 매점</button>
-        </div>
-
-        <div class="stage">
-            <div class="npc-avatar" id="npcAvatar">🕵️‍♂️</div>
-            <div class="npc-name" id="npcName">엉덩이 탐정</div>
-        </div>
-
-        <div class="dialogue-box" id="dialogueText">
-            대사 로딩 중...
-        </div>
-
-        <div class="clue-section">
-            <div class="clue-title">🔎 브라운! 엉덩이 탐정님의 지시에 따라 올바른 분실물 카드를 선택해라 멍!</div>
-            <div class="grid-container" id="clueGrid"></div>
+    <!-- 메인 퀴즈 카드 -->
+    <div class="card-container" id="quizCard" onclick="flipCard()">
+        <div class="card-inner">
+            <!-- 카드 앞면 (힌트 문장) -->
+            <div class="card-front">
+                <div class="question-title">What is this?</div>
+                <div class="description-text" id="descText">힌트 로딩 중...</div>
+                <div class="tap-hint">👇 Tap to check the answer!</div>
+            </div>
+            <!-- 카드 뒷면 (정답 이미지) -->
+            <div class="card-back">
+                <img id="ansImg" src="" alt="answer">
+                <div class="answer-text" id="ansText">정답</div>
+            </div>
         </div>
     </div>
-
-    <div class="overlay" id="shopOverlay">
-        <div class="popup">
-            <h2>🏪 견공 경찰서 매점</h2>
-            <p>코인을 사용하여 수사에 도움이 되는 물건을 사보자 멍!</p>
-            <div class="shop-item">
-                <span>🔎 탐정 돋보기 (20 Coins)</span>
-                <button class="buy-btn" id="btnGlass" onclick="buyItem('glass', 20)">구매</button>
-            </div>
-            <div class="shop-item">
-                <span>🍠 달콤한 고구마 (40 Coins)</span>
-                <button class="buy-btn" id="btnNotebook" onclick="buyItem('notebook', 40)">구매</button>
-            </div>
-            <button class="close-btn" onclick="closeShop()">닫기</button>
-        </div>
-    </div>
+    
+    <!-- 다음 버튼 -->
+    <button class="next-btn" onclick="nextQuestion()">Next Card ➡️</button>
 
 <script>
-    let score = 0;
-    let currentNpcIndex = 0;
-    let solvedCount = 0;
-    let inventory = { glass: false, notebook: false };
-
-    // 오류를 유발하던 따옴표 구조를 깔끔하게 정리했습니다.
-    const npcData = [
-        { 
-            name: "엉덩이 탐정 & 민호(👦)", 
-            avatar: "👦", 
-            dialogue: "🕵️‍♂️ <b>엉덩이 탐정:</b> 첫 번째 의뢰인이군요. 축구 시합이 끝난 뒤 물건을 잃어버렸다고 합니다. 브라운, 의뢰인의 대사를 잘 듣고 물건을 찾아주겠나?<br><br>👦 <b>Minho:</b> I lost my favorite sports equipment after the match. <b>Whose soccer ball is this? Is it mine?</b>", 
-            correct: "Soccer ball" 
+    // 5학년 단원 연계 물건 8개 설명 데이터 (색깔, 모양, 크기, 특징 활용)
+    const quizData = [
+        {
+            desc: "It is round.<br>It is black and white.<br>We can kick it.",
+            text: "Soccer ball",
+            img: "soccer ball.jpg"
         },
-        { 
-            name: "엉덩이 탐정 & 수지(👧)", 
-            avatar: "👧", 
-            dialogue: "🕵️‍♂️ <b>엉덩이 탐정:</b> 이번엔 미술실에서 의뢰가 들어왔습니다. 범인이 의뢰인의 미술 도구를 숨겨놓은 모양이군요.<br><br>👧 <b>Suji:</b> I was drawing a beautiful landscape in art class, but my tools disappeared! <b>Whose sketchbook is this? It's hers... Oh wait, it's mine!</b>", 
-            correct: "Sketchbook" 
+        {
+            desc: "It is a big book.<br>We can draw pictures here.<br>We use it in art class.",
+            text: "Sketchbook",
+            img: "sketchbook.jpg"
         },
-        { 
-            name: "엉덩이 탐정 & 김 선생님(👨‍🏫)", 
-            avatar: "👨‍🏫", 
-            dialogue: "🕵️‍♂️ <b>엉덩이 탐정:</b> 이런, 선생님께서 교과서를 읽지 못해 곤란해하고 계십니다. 냄새가 나는군요... 사건의 냄새가!<br><br>👨‍🏫 <b>Mr. Kim:</b> Hello, Brown. I can't read the textbook without my glasses, and I also misplaced my lesson plan book. <b>Whose notebook is this? Can you help me find his notebook?</b>", 
-            correct: "Notebook" 
+        {
+            desc: "It is small and square.<br>It has many papers.<br>We can write on it.",
+            text: "Notebook",
+            img: "notebook.jpg"
         },
-        { 
-            name: "엉덩이 탐정 & 낸시 선생님(👩‍🦰)", 
-            avatar: "👩‍🦰", 
-            dialogue: "🕵️‍♂️ <b>엉덩이 탐정:</b> 원어민 선생님의 의뢰입니다. 비가 오는데 우산도 없고, 목도 마르시다고 하네요. 얼른 도와드립시다.<br><br>👩‍🦰 <b>Nancy:</b> Oh, hi Brown! It's raining outside but I can't find my umbrella! And I'm so thirsty but where is my water container? <b>Whose bottle is this? It's hers? No, it's mine!</b>", 
-            correct: "Bottle" 
+        {
+            desc: "It is made of glass or plastic.<br>We can put water in it.<br>We drink from it.",
+            text: "Bottle",
+            img: "bottle.jpg"
         },
-        { 
-            name: "엉덩이 탐정 & 동아리 밴드(🧑‍🎤)", 
-            avatar: "🧑‍🎤", 
-            dialogue: "🕵️‍♂️ <b>엉덩이 탐정:</b> 축제 연습을 해야 하는 밴드부 아이들의 악기가 사라졌다고 합니다. 브라운, 어떤 악기인지 집중해 보세요.<br><br>🧑‍🎤 <b>Band:</b> Hey Detective! We need to practice for the school festival, but we lost our musical instruments! <b>Whose guitar is this? It's theirs? No, it's ours!</b>", 
-            correct: "Guitar" 
+        {
+            desc: "It is made of wood.<br>It has six strings.<br>It makes beautiful music.",
+            text: "Guitar",
+            img: "guitar.jpg"
         },
-        { 
-            name: "엉덩이 탐정 & 민호(👦) - 재방문", 
-            avatar: "👦", 
-            dialogue: "🕵️‍♂️ <b>엉덩이 탐정:</b> 민호 군이 다시 찾아왔군요. 축구공은 찾았지만 아직 맨발로 서 있습니다. 마지막 물건을 전달할 시간입니다.<br><br>👦 <b>Minho:</b> Ah, you are back, Brown! Thank you for the ball. But I'm still walking barefoot... <b>Whose sneakers are these? Are they his? No, they are mine!</b>", 
-            correct: "Sneakers" 
+        {
+            desc: "We wear them on our feet.<br>They are comfortable.<br>We wear them when we run.",
+            text: "Sneakers",
+            img: "sneakers.jpg"
+        },
+        {
+            desc: "It looks like a mushroom.<br>We use it on rainy days.<br>It keeps us dry.",
+            text: "Umbrella",
+            img: "umbrella.jpg"
+        },
+        {
+            desc: "They are made of glass.<br>We wear them on our eyes.<br>They help us see better.",
+            text: "Glasses",
+            img: "glasses.jpg"
         }
     ];
 
-    const clueCards = [
-        { name: "Soccer ball", icon: "⚽" }, { name: "Sketchbook", icon: "🎨" },
-        { name: "Notebook", icon: "📒" }, { name: "Bottle", icon: "🧪" },
-        { name: "Guitar", icon: "🎸" }, { name: "Sneakers", icon: "👟" },
-        { name: "Umbrella", icon: "🌂" }, { name: "Glasses", icon: "👓" }
-    ];
+    let currentQuiz = null;
+    const cardContainer = document.getElementById('quizCard');
 
-    function initGame() {
-        const grid = document.getElementById('clueGrid');
-        grid.innerHTML = '';
+    // 카드 뒤집기 토글 함수
+    function flipCard() {
+        cardContainer.classList.toggle('flipped');
+    }
+
+    // 다음 문제 세팅 함수
+    function nextQuestion() {
+        // 우선 카드를 다시 앞면으로 돌려놓기
+        cardContainer.classList.remove('flipped');
         
-        clueCards.forEach(card => {
-            const div = document.createElement('div');
-            div.className = 'clue-card';
-            div.onclick = function() { submitAnswer(card.name); };
-            div.innerHTML = `
-                <div class="icon">${card.icon}</div>
-                <div class="text">${card.name}</div>
-            `;
-            grid.appendChild(div);
-        });
-        updateStage();
-    }
-
-    function updateStage() {
-        if (currentNpcIndex < npcData.length) {
-            const currentNpc = npcData[currentNpcIndex];
-            document.getElementById('npcAvatar').innerText = currentNpc.avatar;
-            document.getElementById('npcName').innerText = currentNpc.name;
-            document.getElementById('dialogueText').innerHTML = currentNpc.dialogue;
-        } else {
-            document.getElementById('npcAvatar').innerText = "🍑";
-            document.getElementById('npcName').innerText = "사건 해결!";
-            document.getElementById('dialogueText').innerHTML = "🕵️‍♂️ <b>엉덩이 탐정:</b> 실례지만 결과 발표를 하도록 하겠습니다! 브라운, 자네 덕분에 모든 사건을 완벽하게 해결했네. 아주 훌륭한 조수야!<br><br>🐶 <b>브라운:</b> 헤헤, 탐정님 덕분이다 멍!<br><br>🏆 <b>최종 획득 코인: " + score + " Coins</b>";
-        }
-        document.getElementById('scoreText').innerText = score;
-        document.getElementById('itemsLeft').innerText = solvedCount;
-    }
-
-    function submitAnswer(selectedItem) {
-        if (currentNpcIndex >= npcData.length) return;
-
-        const currentNpc = npcData[currentNpcIndex];
-
-        if (selectedItem === currentNpc.correct) {
-            let bonus = inventory.notebook ? 25 : 20;
-            score += bonus;
-            solvedCount++;
-            alert("⭕ 정답이다 멍!\n🕵️‍♂️ 엉덩이 탐정: 역시 내 조수 브라운이군요. 멋지게 찾아냈습니다!");
-            currentNpcIndex++;
-            updateStage();
-        } else {
-            if (inventory.glass) {
-                alert("❌ 틀렸다 멍! [돋보기 힌트]: 이 물건의 영어 이름은 '" + currentNpc.correct + "' 이다 멍!");
-            } else {
-                alert("❌ 앗, 이 물건이 아닌가 봐 멍... 대사를 다시 잘 읽어보자 멍!");
-            }
-        }
-    }
-
-    function openShop() { document.getElementById('shopOverlay').style.display = 'flex'; }
-    function closeShop() { document.getElementById('shopOverlay').style.display = 'none'; }
-
-    function buyItem(itemType, cost) {
-        if (inventory[itemType]) return;
-
-        if (score >= cost) {
-            score -= cost;
-            inventory[itemType] = true;
+        // 앞면이 완전히 돌아가는 시간(0.3초) 뒤에 새로운 문제를 출제
+        setTimeout(() => {
+            // 랜덤으로 문제 뽑기
+            const randomIndex = Math.floor(Math.random() * quizData.length);
+            currentQuiz = quizData[randomIndex];
             
-            const btn = itemType === 'glass' ? document.getElementById('btnGlass') : document.getElementById('btnNotebook');
-            btn.innerText = "보유함";
-            btn.className = "buy-btn owned";
-            btn.disabled = true;
-
-            document.getElementById('scoreText').innerText = score;
-            
-            if (itemType === 'glass') {
-                alert("🔎 탐정 돋보기를 구매했다 멍! 이제 틀려도 탐정님이 정답 힌트를 준다 멍!");
-            } else {
-                alert("🍠 달콤한 고구마를 먹었다 멍! 브라운의 힘이 솟아나 정답을 맞힐 때마다 보너스 코인(+25점)을 받는다 멍!");
-            }
-        } else {
-            alert("💰 코인이 부족하다 멍! 의뢰를 더 해결하고 오자 멍!");
-        }
+            // 화면 데이터 변경
+            document.getElementById('descText').innerHTML = currentQuiz.desc;
+            document.getElementById('ansText').innerText = currentQuiz.text;
+            document.getElementById('ansImg').src = currentQuiz.img;
+        }, 300);
     }
 
-    initGame();
+    // 게임 시작 시 첫 번째 문제 출제
+    nextQuestion();
 </script>
 
 </body>
